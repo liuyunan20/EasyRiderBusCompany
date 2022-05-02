@@ -38,8 +38,16 @@ stop_type: {error["stop_type"]}
 a_time: {error["a_time"]}''')
         return error
 
+    def count_stops(self):
+        bus_stops = {}
+        for item in self.database:
+            bus_stops.setdefault(item["bus_id"], 0)
+            bus_stops[item["bus_id"]] += 1
+        for bus_id in bus_stops:
+            print(f'bus_id: {bus_id}, stops: {bus_stops[bus_id]}')
+
 
 bus = EasyRide()
 bus.input_data()
-type_error = bus.check_type()
+bus.count_stops()
 
