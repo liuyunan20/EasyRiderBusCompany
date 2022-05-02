@@ -20,7 +20,7 @@ class EasyRide:
             if type(item["stop_id"]) != int:
                 error["total"] += 1
                 error["stop_id"] += 1
-            if type(item["stop_name"]) != str or not item["stop_name"]:
+            if type(item["stop_name"]) != str or not re.match(r'[A-Z][\w\s]* (Road|Avenue|Boulevard|Street)$', item["stop_name"], flags=re.A):
                 error["total"] += 1
                 error["stop_name"] += 1
             if type(item["next_stop"]) != int:
@@ -29,14 +29,11 @@ class EasyRide:
             if item["stop_type"] not in ("O", "S", "F", ""):
                 error["total"] += 1
                 error["stop_type"] += 1
-            if type(item["a_time"]) != str or not re.match(r"..:..", item["a_time"]):
+            if type(item["a_time"]) != str or not re.match(r"[01]\d:[012345]\d$", item["a_time"]):
                 error["total"] += 1
                 error["a_time"] += 1
         print(f'''Type and required field validation: {error["total"]} errors
-bus_id: {error["bus_id"]}
-stop_id: {error["stop_id"]}
 stop_name: {error["stop_name"]}
-next_stop: {error["next_stop"]}
 stop_type: {error["stop_type"]}
 a_time: {error["a_time"]}''')
         return error
