@@ -41,13 +41,47 @@ a_time: {error["a_time"]}''')
     def count_stops(self):
         bus_stops = {}
         for item in self.database:
-            bus_stops.setdefault(item["bus_id"], 0)
-            bus_stops[item["bus_id"]] += 1
+            bus_stops.setdefault(item["bus_id"], set())
+            bus_stops[item["bus_id"]].add(item["stop_name"])
         for bus_id in bus_stops:
-            print(f'bus_id: {bus_id}, stops: {bus_stops[bus_id]}')
+            print(f'bus_id: {bus_id}, stops: {len(bus_stops[bus_id])}')
+
+    def start_trans_final(self):
+        stops = {"S": set(), "F": set(), "T": set()}
+        bus_sf_stops = {}
+        bus_stops = {}
+        stop_times = {}
+        for item in self.database:
+            if item["stop_type"] == "S" or item["stop_type"] == "F":
+                # add start stops and final stops
+                stops[item["stop_type"]].add(item["stop_name"])
+                bus_sf_stops.setdefault(item["bus_id"], {"S": None, "F": None})
+                if bus_sf_stops[item["bus_id"]][item["stop_type"]]:
+                    print(f"There is no start or end stop for the line: {item['bus_id']}.")
+                    return
+                else:
+                    bus_sf_stops[item["bus_id"]][item["stop_type"]] = item["stop_name"]
+            # find out transfer stops
+            bus_stops.setdefault(item["bus_id"], set())
+            bus_stops[item["bus_id"]].add(item["stop_name"])
+        for line in bus_sf_stops:
+            if bus_sf_stops[line]["S"] is None or bus_sf_stops[line]["F"] is None:
+                print(f"There is no start or end stop for the line: {line}.")
+                return
+        for value in bus_stops.values():
+            for stop in value:
+                stop_times.setdefault(stop, 0)
+                stop_times[stop] += 1
+        for stop in stop_times:
+            if stop_times[stop] > 1:
+                stops["T"].add(stop)
+        print(f'''Start stops: {len(stops["S"])} {sorted(list(stops["S"]))}
+Transfer stops: {len(stops["T"])} {sorted(list(stops["T"]))}
+Finish stops: {len(stops["F"])} {sorted(list(stops["F"]))}''')
+        return stops
 
 
 bus = EasyRide()
 bus.input_data()
-bus.count_stops()
+bus.start_trans_final()
 
