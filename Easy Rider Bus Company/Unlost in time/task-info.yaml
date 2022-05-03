@@ -187,5 +187,8 @@ files:
     \ == '__main__':\n    EasyRiderStage5('easyrider.easyrider').run_tests()\n"
   learner_created: false
 feedback_link: https://hyperskill.org/projects/128/stages/684/implement#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Tue, 03 May 2022 04:15:48 UTC
 record: -1

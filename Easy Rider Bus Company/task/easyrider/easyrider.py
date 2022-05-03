@@ -80,8 +80,32 @@ Transfer stops: {len(stops["T"])} {sorted(list(stops["T"]))}
 Finish stops: {len(stops["F"])} {sorted(list(stops["F"]))}''')
         return stops
 
+    def check_a_time(self):
+        bus_stop_time = {}
+        stop_id_name = {}
+        for item in self.database:
+            stop_id_name[item["stop_id"]] = item["stop_name"]
+            bus_stop_time.setdefault(item["bus_id"], {})
+            bus_stop_time[item["bus_id"]][item["stop_id"]] = (item["a_time"], item["next_stop"])
+        print("Arrival time test:")
+        time_ok = True
+        for bus_id in bus_stop_time:
+            for stop in bus_stop_time[bus_id]:
+                current_time = bus_stop_time[bus_id][stop][0].split(":")  # line[stop][0] is current a_time
+                next_stop = bus_stop_time[bus_id][stop][1]
+                if bus_stop_time[bus_id].get(next_stop):  # line[stop][1] is next stop id
+                    next_time = bus_stop_time[bus_id][next_stop][0].split(":")
+                    if int(next_time[0]) < int(current_time[0]) or (int(next_time[0]) == int(current_time[0]) and int(next_time[1]) < int(current_time[1])):
+                        print(f"bus_id line {bus_id}: wrong time on station {stop_id_name[next_stop]}")
+                        time_ok = False
+                        break
+                else:
+                    continue
+        if time_ok:
+            print("OK")
+
 
 bus = EasyRide()
 bus.input_data()
-bus.start_trans_final()
+bus.check_a_time()
 
