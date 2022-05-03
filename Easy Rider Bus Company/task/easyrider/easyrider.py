@@ -5,9 +5,29 @@ import re
 class EasyRide:
     def __init__(self):
         self.database = None
+        self.stops = {"S": set(), "F": set(), "T": set()}
+        self.bus_sf_stops = {}
+        self.bus_stops = {}
+        self.stop_times = {}
 
     def input_data(self):
         self.database = json.loads(input("input:"))
+        for item in self.database:
+            if item["stop_type"] == "S" or item["stop_type"] == "F":
+                # add start stops and final stops
+                self.stops[item["stop_type"]].add(item["stop_name"])
+                self.bus_sf_stops.setdefault(item["bus_id"], {"S": [], "F": []})
+                self.bus_sf_stops[item["bus_id"]][item["stop_type"]].append(item["stop_name"])
+            # find out transfer stops
+            self.bus_stops.setdefault(item["bus_id"], set())
+            self.bus_stops[item["bus_id"]].add(item["stop_name"])
+        for value in self.bus_stops.values():
+            for stop in value:
+                self.stop_times.setdefault(stop, 0)
+                self.stop_times[stop] += 1
+        for stop in self.stop_times:
+            if self.stop_times[stop] > 1:
+                self.stops["T"].add(stop)
 
     def check_type(self):
         error = {"total": 0, "bus_id": 0, "stop_id": 0,
@@ -39,46 +59,18 @@ a_time: {error["a_time"]}''')
         return error
 
     def count_stops(self):
-        bus_stops = {}
-        for item in self.database:
-            bus_stops.setdefault(item["bus_id"], set())
-            bus_stops[item["bus_id"]].add(item["stop_name"])
-        for bus_id in bus_stops:
-            print(f'bus_id: {bus_id}, stops: {len(bus_stops[bus_id])}')
+        for bus_id in self.bus_stops:
+            print(f'bus_id: {bus_id}, stops: {len(self.bus_stops[bus_id])}')
 
     def start_trans_final(self):
-        stops = {"S": set(), "F": set(), "T": set()}
-        bus_sf_stops = {}
-        bus_stops = {}
-        stop_times = {}
-        for item in self.database:
-            if item["stop_type"] == "S" or item["stop_type"] == "F":
-                # add start stops and final stops
-                stops[item["stop_type"]].add(item["stop_name"])
-                bus_sf_stops.setdefault(item["bus_id"], {"S": None, "F": None})
-                if bus_sf_stops[item["bus_id"]][item["stop_type"]]:
-                    print(f"There is no start or end stop for the line: {item['bus_id']}.")
-                    return
-                else:
-                    bus_sf_stops[item["bus_id"]][item["stop_type"]] = item["stop_name"]
-            # find out transfer stops
-            bus_stops.setdefault(item["bus_id"], set())
-            bus_stops[item["bus_id"]].add(item["stop_name"])
-        for line in bus_sf_stops:
-            if bus_sf_stops[line]["S"] is None or bus_sf_stops[line]["F"] is None:
+        for line in self.bus_sf_stops:
+            if len(self.bus_sf_stops[line]["S"]) != 1 or len(self.bus_sf_stops[line]["F"]) != 1:
                 print(f"There is no start or end stop for the line: {line}.")
                 return
-        for value in bus_stops.values():
-            for stop in value:
-                stop_times.setdefault(stop, 0)
-                stop_times[stop] += 1
-        for stop in stop_times:
-            if stop_times[stop] > 1:
-                stops["T"].add(stop)
-        print(f'''Start stops: {len(stops["S"])} {sorted(list(stops["S"]))}
-Transfer stops: {len(stops["T"])} {sorted(list(stops["T"]))}
-Finish stops: {len(stops["F"])} {sorted(list(stops["F"]))}''')
-        return stops
+
+        print(f'''Start stops: {len(self.stops["S"])} {sorted(list(self.stops["S"]))}
+Transfer stops: {len(self.stops["T"])} {sorted(list(self.stops["T"]))}
+Finish stops: {len(self.stops["F"])} {sorted(list(self.stops["F"]))}''')
 
     def check_a_time(self):
         bus_stop_time = {}
@@ -104,8 +96,19 @@ Finish stops: {len(stops["F"])} {sorted(list(stops["F"]))}''')
         if time_ok:
             print("OK")
 
+    def check_on_demand(self):
+        wrong_type_stops = []
+        for term in self.database:
+            if term["stop_type"] == "O" and (term["stop_name"] in self.stops["S"]|self.stops["T"]|self.stops["F"]):
+                wrong_type_stops.append(term["stop_name"])
+        print("On demand stops test:")
+        if wrong_type_stops:
+            print(f'Wrong stop type: {sorted(wrong_type_stops)}')
+        else:
+            print("OK")
+
 
 bus = EasyRide()
 bus.input_data()
-bus.check_a_time()
+bus.check_on_demand()
 
